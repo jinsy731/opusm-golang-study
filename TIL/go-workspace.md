@@ -16,3 +16,25 @@ one directory
 |----directory with code for project / repo  
 ```
 workspace는 위와 같은 구조로 되어 있다. 
+
+# GOPATH 설정 방법
+
+콘솔에서 go env 명령어를 입력하는 아래와 같은 모습을 볼 수 있는데,
+
+```
+GO111MODULE=""
+GOARCH="arm64"
+GOBIN=""
+GOCACHE="/Users/kimh4nkyul/Library/Caches/go-build"
+GOENV="/Users/kimh4nkyul/Library/Application Support/go/env"
+GOEXE=""
+GOEXPERIMENT=""
+GOFLAGS=""
+GOHOSTARCH="arm64"
+GOHOSTOS="darwin"
+...
+```
+여기서 사용자가 만든 workspace를 사용하고 싶다면 GOPATH를 변경해야 한다.  
+GOPATH는 workspace 경로가 설정된 환경 변수로 사용자 계정 디렉토리 밑에 go가 기본 설정되어 있다.  
+(예를 들어, /Users/kimh4nkyul/go)  
+
