@@ -36,7 +36,7 @@ go get -d 사용할 때, 맨 뒤에 ...을 붙이면
 관련된 모든 패키지를 재귀적으로 받겠다는 의미이다. 
 ```
 
-현재 go get은 Deprecated 되었다.  
+현재 go get은 <b>1.17버전</b> 부터 Deprecated 되었다.  
 따라서 go install을 통해 패키지를 다운로드 받으면 된다.
 go install로 패키지를 다운받을 경우에는 반드시 `@latest` 같이 버전을 명시해야 한다.
 
@@ -45,3 +45,5 @@ go install은 패키지를 다운받고 컴파일하는 과정이 포함되어 �
 ```
 go install github.com/KimH4nKyul/go-test-module/module1@latest
 ```
+
+설치가 완료된 패키지는 GOPATH/pkg에 위치할 것이다. 
