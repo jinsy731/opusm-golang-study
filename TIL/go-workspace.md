@@ -38,3 +38,18 @@ GOHOSTOS="darwin"
 GOPATH는 workspace 경로가 설정된 환경 변수로 사용자 계정 디렉토리 밑에 go가 기본 설정되어 있다.  
 (예를 들어, /Users/kimh4nkyul/go)  
 
+필자는 Mac M1에서 Oh-My-Zsh을 사용하고 있기 때문에 아래와 같은 방법으로 GOPATH를 변경했다.  
+(Linux나 Windows를 사용하고 있다면 구글신께 물어보길 바란다. 😄)
+  
+```
+cd $HOME    // 현재 사용자 계정의 홈 디렉토리로 이동
+vi .zshrc   // 현재 사용자 환경변수 설정(전역 사용자는 /etc/zshrc에서 설정)
+export GOPATH="$HOME/<workspace로 지정할 디렉토리>" // 설정후 저장
+source .zshrc
+```
+
+위 과정을 통해 GOPATH에 대한 환경 변수를 설정했다면, go env 명령어로 설정이 잘 되었는지 확인한다.  
+```
+go env | grep GOPATH
+GOPATH="/Users/kimh4nkyul/IdeaProjects/opusm-golang-study/TIL/go-workspace"
+```
