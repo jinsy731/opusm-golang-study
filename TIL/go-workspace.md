@@ -6,9 +6,9 @@ Golang은 팀의 효율성과 생산성을 위해 코드 형식까지 정해 놓
 Workspace도 그런 규약 중에 하나이다.   
 ```
 one directory  
-|-bin - complie된 내용 저장 
-|-pkg - 압축된 파일 저장 (컴파일링 절약을 위해 패키지가 변경되지 않는다면 아키이브를 이곳에 저장)
-|-src - 프로젝트 폴더 또는 리포지토리에 관한 네임스페이싱, 패키지 관리  
+|-bin - complie된 내용(실행파일 및 바이너리) 저장 
+|-pkg - 압축된 파일(패키지 오브젝트) 저장 (컴파일링 절약을 위해 패키지가 변경되지 않는다면 아키이브를 이곳에 저장)
+|-src - 소스코드, 프로젝트 폴더 또는 리포지토리에 관한 네임스페이싱, 패키지 관리  
 |--github.com  
 |---<github.com username>  
 |----directory with code for project / repo  
