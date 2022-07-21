@@ -24,6 +24,29 @@ Name Spacing(네임 스페이싱) :
     (예)
 ```
 
+위의 생성 방법에서도 알 수 있듯이, Go Module(go mod)은  
+새로운 모듈을 만들 수 있고, `go.mod` 파일을 정의, 초기화할 수 있다. (`go init`) 
+
+## Go Module 관련 명령어
+
+Go Module과 관련된 명령어가 있는데  
+`go build`, `go test`, `go list -m all`, `go get` 다.   
+
+* `go build`
+* `go test` 
+  * go build와 go test는 패키지 구축 명령어로 사용된다. 
+  * go.mod에 새로운 종속성을 추가하는데 사용된다. 
+* `go list -m all` : 
+  * 현재 모듈의 종속성을 프린트한다. 
+* `go get` : 
+  * 새로운 종속성을 추가하거나 필요한 종속성의 버전을 변경한다. 
+
+## Go Module에서 사용하지 않는 종속성 제거
+
+```
+go mod tidy 
+```
+
 ## Go Module로 사용할 Repository 다운로드 방법
 
 ```
@@ -46,4 +69,4 @@ go install은 패키지를 다운받고 컴파일하는 과정이 포함되어 �
 go install github.com/KimH4nKyul/go-test-module/module1@latest
 ```
 
-설치가 완료된 패키지는 GOPATH/pkg에 위치할 것이다. 
+설치가 완료된 패키지는 `$GOPATH/pkg` 에 위치할 것이다. 
