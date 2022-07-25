@@ -6,5 +6,5 @@ import "fmt"
 
 func Hello() string {
 	fmt.Println("Hello, world.")
-	return "Hello. world."
+	return "Hello, world."
 }
