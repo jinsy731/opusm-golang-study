@@ -114,7 +114,13 @@ func main() {
 }
 ```
 
-`슬라이스(Slice)` 는 같은 데이터 타입을 한데 묶어준다.  
+`슬라이스(Slice)` 는 같은 데이터 타입을 한데 묶어준다. (=리스트)  
+`Array` 는 길이가 고정되어 있는 정적 자료구조이지만, `Slice` 는 길이가 동적인 자료구조이다.  
+
+내부적으로 Array의 첫 번째 원소를 가리키는 포인터, Slice 길이, 용량을 나타내는 값을 가진 구조이다.  
+(슬라이스는 배열을 참조하고 있는 참조타입이다. )
+
+
 
 ### Slicing 
 
@@ -139,7 +145,109 @@ func main() {
 `x[n:n-1]` 과 같이 사용한다.  
 슬라이싱은 n부터 시작해서 n-1까지를 잘라 가져온다는 의미이다.  
 
+### Slice Appending   
+`append` 함수로 슬라이스 맨 뒤에 값을 추가할 수 있다.  
+포맷은 `func append(slice []T, elements ...T) []T` 이고,   
+여기서 `...T` 는 타입T의 데이터 수가 여러 개 입력 가능하다는 의미이다.  
+
+````go 
+x:=[]int{1,2,3}
+x = append(x, 4, 5, 6} 
+fmt.Println(x) // [ 1 2 3 4 5 6 ] 
+````
+
+또는 
+
+```go
+x:=[]int{1,2,3}
+y:=[]int{4,5,6}
+x = append(x, y...) 
+fmt.Println(x) // [ 1 2 3 4 5 6 ]  
+```
+
+```go 
+x = appned(x[:2], x[4:]...)
+fmt.Println(x) // [ 1 2 4 5 6 ] 
+```
+
+위 샘플처럼 슬라이싱과 결합해 사용할 수 있다.  
+이 경우에는 값을 제거하는 쪽에 가깝다.
+
+
+```go
+x:=make([]int, 10, 100) // make(type, len, cap) 
+fmt.Println(x)      // [ 0 0 0 0 0 0 0 0 0 0 ] 
+fmt.Println(len(x)) // 10
+fmt.Println(cap(x)) // 100
+```
+
+`make` 는 동적으로 원소 개수가 달라지는 슬라이스에 원하는 길이와 용량을 정할 수 있도록 해준다.  
+(용량에 대한 매개변수 생략 가능하다. ) 
+`make` 로 생성된 빈 슬라이스는 원소를 추가하면 설정한 용량만큼 길이가 증가할 것이다.  
+그런데 여기서 슬라이스에 저장된 원소의 개수가 100으로 지정된 용량을 넘기면 어떻게 될까?  
+슬라이스는 자신의 용량(정확히는 슬라이스가 가리키는 하부 배열 용량)을 두 배로 늘려 기존의 원소를 잃지 않고 계속 사용할 수 있도록 한다.
+정확히는 기존에 가리키던 하부 배열의 원소를 그대로 들고있으면서, 용량이 두 배인 배열을 새로 만들고, 이전 배열과 새 배열을 가리키고 있는 것이다.
+
+### Multiple Slice 
+
+```go 
+package main 
+
+import "fmt" 
+
+func main() {
+    first := {"Kim", "Lee", "Jeon", "Kwon"} 
+    name := {"Hank", "Mingi", "Wardy", "Hansung"}
+    clasi := [][]stirng{first, name} 
+    
+    fmt.Println(clasi)
+}
+```
+
 ## Map
+
+`map` 은 `key:value` 쌍으로 이루어진 자료구조이다.  
+
+```go
+package main 
+
+import "fmt"
+
+func main() {
+	m := map[string]int{ 
+		"Bond" : 32,
+		"Penny" : 27
+    }
+	fmt.Println(m)
+	v, ok := m["Donkey"]
+	fmt.Println(v, ok) 
+}
+```
+
+위 샘플 코드를 보듯이, `map[<key type>]<value type>` 포맷으로 정의하고, `{ }` 안에  필요한 값을 입력한다.  
+`v, ok := m["Donkey"]` 는 맵에 Donkey란 키를 넣었을 때 값이 있는지 없는지 체크하는 구문이다.  
+이를 Go에서는 관용적으로 조건문과 함께 쓰는데 그 모습은 아래 샘플과 같다. (`comma ok` 라고 함. ) 
+
+```go 
+if v, ok := m["Donkey"]; ok {
+    fmt.Println(v)  
+} 
+```
+
+
+`for` 반복문에서도 `range` 와 함께 사용할 수 있다.  
+
+```go
+for k, v := range m { 
+	fmt.Println(k, v)
+}
+```
+
+`map` 의 값을 삭제할 수도 있다.  
+
+```go
+delete(m, "Bond") 
+```
 
 ## Struct
 
