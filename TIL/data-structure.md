@@ -216,7 +216,7 @@ import "fmt"
 func main() {
 	m := map[string]int{ 
 		"Bond" : 32,
-		"Penny" : 27
+		"Penny" : 27,
     }
 	fmt.Println(m)
 	v, ok := m["Donkey"]
@@ -249,6 +249,122 @@ for k, v := range m {
 delete(m, "Bond") 
 ```
 
+다만 `map` 을 삭제할 때는 없는 키값을 입력해도 에러가 안나기 때문에  
+`if v, ok := <map name>["map key"]; ok { ... }` 로직으르 처리하길 권장한다.  
+
+```go
+package main 
+
+import "fmt" 
+
+func main() {
+	m := map[string]string {
+		"OpusM" : "LedgerMaster",
+		"Hexlant" : "Octet", 
+		"Pala" : "PalaSquare",
+    }
+	
+	if v, ok := m["Krust"]; ok {
+		fmt.Println(v) 
+		delete(m, "Krust")
+    }
+}
+```
+
 ## Struct
+
+`struct` 는 서로 다른 유형의 데이터를 함께 구성할 수 있는 데이터 구조이다.
+
+```go
+package main 
+
+import "fmt" 
+
+type person struct { 
+	first string
+	last string 
+}
+
+func main() {
+	p1 := person{
+		first: "James", 
+		last: "Bond",
+    }
+	
+	p2 := person{ 
+		first: "Miss",
+		last: "Moneypenny",
+    }
+	
+	fmt.Println(p1) // {James Bond} 
+	fmt.Println(p2.fisrt, p2.last) // Miss Moneypenny 
+}
+```
+
+정의한 `struct` 의 값을 가져올 때는 `점 표기법(Dot notation)` 을 사용한다. 
+
+## Embedded Struct
+
+한 타입을 선택하고 그것을 다른 타입에 임베드하는 방법이다. 
+
+```go
+package main
+
+type person struct {
+	first stirng
+	last string
+}
+
+type secretAgent struct {
+	person 
+	ltk bool 
+}
+
+func main() {
+    //p1 := person{ 
+	//	first: "James",
+	//	last: "Bond",
+    //}
+	
+	sa1 := secretAgent{
+		person: person{ 
+			first: "James",
+			last: "Bond",
+        },
+		ltk: true,
+    }
+	
+	fmt.Pritnln(sa1.first, sa1.last, sa1.ltk)
+}
+```
+
+위 샘플에서는 `person` 이 임베디드 구조체이며, `secretAgent` 에 임베드 되었다.  
+임베드된 구조체를 `inner type` 이라 하고,  
+내부 필드가 승격되어 상위 타입(`outer type`)에서 내부필드에 바로 접근할 수 있다.  
+
+## Anonymous Struct
+
+구조체를 `익명 구조체` 로 만들어 표현할 수도 있는데,
+
+```go
+pacakge main 
+
+import "fmt" 
+
+func main() {
+	p1 := struct {
+	    first string
+            last string 
+    } { 
+	        first: "James",
+		last: "Bond", 
+    }   
+}
+```
+
+라고 코드를 작성할 수 있다. 이러한 방식은 코드를 깨끗하고 오염없이 린(lean) 하게 유지하고 싶을 때 사용한다.  
+필요 없는 외부 타입이나 변수를 사용하지 않는다면 이런 식으로 작성하는 것을 권장한다.  
+
+
 
 ## House Keeping 
