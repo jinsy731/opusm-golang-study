@@ -352,19 +352,15 @@ pacakge main
 import "fmt" 
 
 func main() {
-	p1 := struct {
-	    first string
-            last string 
+    p1 := struct {
+        first string
+        last string 
     } { 
-	        first: "James",
-		last: "Bond", 
+        first: "James",
+        last: "Bond", 
     }   
 }
 ```
 
 라고 코드를 작성할 수 있다. 이러한 방식은 코드를 깨끗하고 오염없이 린(lean) 하게 유지하고 싶을 때 사용한다.  
-필요 없는 외부 타입이나 변수를 사용하지 않는다면 이런 식으로 작성하는 것을 권장한다.  
-
-
-
-## House Keeping 
+필요 없는 외부 타입이나 변수를 사용하지 않는다면 이런 식으로 작성하는 것을 권장한다.
