@@ -68,5 +68,64 @@ func allSum(x ...int) int {
 
 호출이 끝나는 지점까지 함수 실행을 지연시킨다.  
 
+```go
+package main 
 
+import "fmt" 
 
+func main() {
+	defer foo() 
+	bar() 
+}
+
+func foo() {
+	fmt.Println("I am foo") 
+}
+
+func bar() {
+	fmt.Println("I am bar")
+}
+```
+
+위 샘플에서 foo()와 bar() 중에 어떤 것이 먼저 호출될까?   
+bar()가 먼저 호출되어 실행되고, 끝나면 foo()가 실행된다. 
+
+# 리시버 매개변수  
+
+함수는 `func (r receiver) identifier(parameter(s)) return(s)` 로 구성된다.  
+이 중에서 `r recevier` 에 해당하는 부분을 리시버 매개변수라고 하는데,  
+이 매개변수가 정의된 함수는 리시버 매개변수의 타입에 해당하는 메소드가 된다.  
+
+```go
+package main
+
+import "fmt" 
+
+type person struct { 
+	fisrt string
+	last string 
+}
+
+type secretAgent struct {
+	person 
+	patner string 
+	ltk bool 
+}
+
+func (s secretAgent) speak() { 
+	fmt.Println("I am ", s.first, s.last)
+}
+
+func main() {
+	sa1 := secretAgent{
+		person: person { 
+			"James", 
+			"Bond",
+        },
+		patner: "Moneypenny",
+		ltk: true,
+    }
+	fmt.Println(sa1)
+	sa1.speak()         // 마치 메소드처럼 호출한다. 
+}
+```
