@@ -79,7 +79,7 @@ func (s secretAgent) speak() {
 }
 
 func helloAgent(h human) {
-	fmt.Println("Hello" , h) 
+	fmt.Println("Hello" , h.first) 
 }
 
 func main() {
@@ -112,4 +112,60 @@ human interface 는 speak() 를 정의한 타입이고, speak() 는 person 과 s
 따라서 human interface 타입은 person, secertAgent 타입을 취할 수 있다.  
 
 이것이 Go에서의 polymorphism(다형성) 이다. 다형성은 의미 그대로 많이 변한다는 뜻이다.  
-human 이 person 이 되고, secretAgent 가 될 수 있는 것처럼 말이다. 
+human 이 person 이 되고, secretAgent 가 될 수 있는 것처럼 말이다.   
+
+좀 더 쉬운 비유를 들어 본다면.  
+`human` 이라는 사람의 이상형이 `speak()` 할 줄 아는 사람인 거고,  
+그 조건에 포함되는 사람인 `sa1`, `p1` 에게 "당신 정말 제 타입이네요. " 라고 말하는 상황인거다.  
+그런데 인생을 살면서 이상형이 언제나 한결같은 적이 없었을 뿐. 🤣
+
+# 인터페이스 단언(Assert)  
+
+```go
+package main 
+import "fmt" 
+
+// ... 
+
+func helloAgent(h human) {
+	switch h.(type) {
+	case person:
+		fmt.Println(h.(person).first)
+	case secretAgent: 
+		fmt.Println(h.(secretAgent).first)
+	default:
+		fmt.Println(h.first)
+    }
+}
+
+// ...
+```
+
+당연히 다형성을 구현하는 개념인 만큼, `conversion` 가능하다.  
+그러나 위 샘플에서 사용된 개념은 엄연히 다르고, 타입에 대한 단언 처리를 하는 것이다.  
+전환 이라는 것은 어떤 값을 다른 타입으로 변경하는 것이다.  
+위 샘플에서 구현된 방법은 어떤 변수의 타입에 대한 처리를 분기하는 `assertion` 혹은 `asserting` 이라는 기법이다.
+
+# 익명 함수  
+
+익명 구조체에 이어 익명 함수가 등장했다.  
+익명 함수는 별다른 개념 설명 없이 샘플만 봐도 이해가 가능하다.  
+그냥 이름이 없는 함수다.  
+
+```go
+package 
+
+import "fmt" 
+
+func main() {
+	func(lang string) {
+		fmt.Println("My favorite programming language is ", lang)
+    }("Go")
+}
+```
+
+익명 함수의 구조는 `func(paramters) { code } (arguments)` 이며,  
+익명 함수의 존재 이유는 재사용할 필요가 없고, 호출되고 종료되는 그 한 순간에서 메모리 관리에 대한 이점을 얻기 때문이다.  
+(일반 함수는 언제든 메모리에서 여러번 또는 항상 존재할 경우가 있지만. )
+
+
