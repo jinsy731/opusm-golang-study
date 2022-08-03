@@ -146,26 +146,3 @@ func helloAgent(h human) {
 전환 이라는 것은 어떤 값을 다른 타입으로 변경하는 것이다.  
 위 샘플에서 구현된 방법은 어떤 변수의 타입에 대한 처리를 분기하는 `assertion` 혹은 `asserting` 이라는 기법이다.
 
-# 익명 함수  
-
-익명 구조체에 이어 익명 함수가 등장했다.  
-익명 함수는 별다른 개념 설명 없이 샘플만 봐도 이해가 가능하다.  
-그냥 이름이 없는 함수다.  
-
-```go
-package 
-
-import "fmt" 
-
-func main() {
-	func(lang string) {
-		fmt.Println("My favorite programming language is ", lang)
-    }("Go")
-}
-```
-
-익명 함수의 구조는 `func(paramters) { code } (arguments)` 이며,  
-익명 함수의 존재 이유는 재사용할 필요가 없고, 호출되고 종료되는 그 한 순간에서 메모리 관리에 대한 이점을 얻기 때문이다.  
-(일반 함수는 언제든 메모리에서 여러번 또는 항상 존재할 경우가 있지만. )
-
-
