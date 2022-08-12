@@ -148,7 +148,164 @@ __`공유변수` 에 대한 정확한 액세스를 구현하는 데 요구되는
 > Do not communicate by sharing memory. instead, share memory by communicating.  
 > ~ Effective Go ~
  
-경쟁상태를 해결하는 방법으로는 ___뮤텍스, 아토믹, 채널___ 이 있다.  
+경쟁상태를 해결하는 방법으로는 ___뮤텍스, 아토믹, 채널___ 이 있다.
+
+```go
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"sync"
+	"time"
+)
+
+func main() {
+	fmt.Println(runtime.NumCPU())
+	fmt.Println(runtime.NumGoroutine())
+
+	counter := 0
+	const gs = 100
+
+	var wg sync.WaitGroup
+	wg.Add(gs)
+
+	for i := 0; i < gs; i++ {
+		go func() {
+			v := counter
+			// time.Sleep(time.Second) // Sleep은 고루틴을 대기상태로 만든다. 
+			runtime.Gosched() // 다른 고루틴이 실행되면서 그 프로세서를 양보한다. 
+			v++
+			counter = v
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	fmt.Println(runtime.NumGoroutine())
+	fmt.Println("Counter: ", counter)
+}
+```
+
+이 샘플은 위 그림을 코드로 표현한 것이다.  
+코드를 통해 어떻게 경쟁 상태를 해결해 나가는지 알아보자.  
+
+위 샘플을 실행하면 결과는 아래와 같다.  
+
+```text
+CPUs: 1
+Goroutines: 1
+Goroutines: 1
+Counter: 2 
+```
+
+결과는 현재 실행환경의 코어가 몇 개 있는가에 따라서 달라진다.  
+CPUs 가 8인 환경이라면 Counter 에 대한 결과가 70, 81, 75, 93 등등  
+실행할 때 마다 달라질 것이다.  
+
+고 커맨드에서 고 프로그램의 이런 경쟁 상태에 대해서 체크할 수 있는데,  
+`go run -race main.go` 와 같이 고 프로그램을 실행시키면 된다.  
+
+그러면 몇 개의 경쟁 상태가 있는지 알려줄 것이다.
+앞서 말한대로, 고루틴의 경쟁 상태는 아토믹, 뮤텍스, 채널 등으로 해결할 수 있다.  
+
+경쟁 상태가 발생하는 이유는 다수의 고루틴이 존재하기 때문이다.  
+여러 고루틴이 공유 변수에 액세스 하고 있다면, 다른 고루틴이 액세스에 대해 체크할 수 있어야 한다.  
+도서관의 대출 시스템과 비슷하다고 보면 된다.  
+
+아무도 어떤 작업이 완료될 때까지 사용할 수 없어야 한다.   
+작업이 끝났음을 알려준다면 다음 차례가 그것의 잠금을 해제할 수 있어야 한다.  
+그럼 다음 고루틴이 공유 변수를 사용할 수 있다.  
+
+```go
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"sync"
+	"time"
+)
+
+func main() {
+	fmt.Println(runtime.NumCPU())
+	fmt.Println(runtime.NumGoroutine())
+
+	counter := 0
+	const gs = 100
+
+	var wg sync.WaitGroup
+	var mux sync.Mutex
+	wg.Add(gs)
+
+	for i := 0; i < gs; i++ {
+		go func() {
+			mux.Lock() // 뮤텍스가 이 코드 덩어리를 잠근다. 
+			v := counter
+			// time.Sleep(time.Second) // Sleep은 고루틴을 대기상태로 만든다. 
+			runtime.Gosched() // 다른 고루틴이 실행되면서 그 프로세서를 양보한다. 
+			v++
+			counter = v
+			mux.Unlock() // 잠금이 풀린다. 
+			wg.Done()
+		}()
+		fmt.Println("Go routines: ", runtime.NumGoroutine())
+	}
+	wg.Wait()
+	fmt.Println(runtime.NumGoroutine())
+	fmt.Println("Counter: ", counter)
+}
+```
+
+뮤텍스를 적용한 코드이다. 뮤텍스로 Lock() 한 시점에서 다른 고루틴은 counter 에 액세스할 수 없다.  
+그리고 Unlock() 이 되면 다른 고루틴이 counter 에 액세스할 수 있다.  
+
+실행되는 고루틴 개수가 일정할 것이고, Counter 도 원했던 100 이라는 결과를 출력한다.  
+
+다음 문서를 꼭 읽어보길 바란다. 
+* https://godoc.org/sync#Mutex.Lock
+
+# Atomic 
+
+아토믹(Atomic) 은 동기화 알고리즘을 구현하는 데 유용한 저수준의 아토믹 메모리 원시 자료형을 제공한다.  
+아토믹 역시 경쟁 상태를 피하는 역할을 하는데 사용한다.  
+
+https://godoc.org/sync/atomic 에서 자세히 학습할 수 있다.  
+아토믹은 동기화에 대한 깊은 이해가 필요하기 때문에 공부를 많이해야 한다.  
+(공부 싫어)
+
+```go
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"sync"
+	"sync/atomic"
+)
+
+func main() {
+	fmt.Println(runtime.NumCPU())
+	fmt.Println(runtime.NumGoroutine())
+
+	var counter int64
+	const gs = 100
+
+	var wg sync.WaitGroup
+	wg.Add(gs)
+
+	for i := 0; i < gs; i++ {
+		go func() {
+			atomic.AddInt64(&counter, 1) // 아토믹은 int64 포인터를 요구한다.
+			runtime.Gosched() // 다른 고루틴이 실행되면서 그 프로세서를 양보한다.
+			fmt.Println("Counter: ", atomic.LoadInt64(&counter))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	fmt.Println(runtime.NumGoroutine())
+	fmt.Println("Counter: ", counter)
+}
+```
 
 # Go routines  
 
