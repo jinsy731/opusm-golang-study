@@ -21,6 +21,47 @@ CPU가 하나이기 때문에 명령어가 하나씩 차례로 이어질 것이�
 > 프로세스가 동시에 실행되는 것이다.  
 > 출처: 인프런 개발남노씨, 기출로 대비하는 개발자 전공면접 [CS 완전정복] 
 
+# Go routines
+
+고루틴은 단순한 함수 모델을 갖는다.  
+고루틴은 같은 주소 공간에서 다른 고루틴과 동시에 실행되는 함수이다.
+
+고루틴은 OS의 멀티 스레드에 멀티플렉싱 된다.  
+입력 및 출력 작업을 위해 대기 중일 때와 같이 하나의 고루틴이 블락되면 다른 고루틴이 계속 실행된다.  
+이런 설계로 인해 여러 복잡한 생성과 관리가 드러나지 않는다.
+
+> 멀티플렉서 (또는 MUX) 는 여러 아날로그 또는 디지털 입력 신호 중 하나를 선택하여  
+> 선택된 입력을 단일 라인에 전달하는 장치이다.   
+> ~ 위키백과 ~
+
+Go 에서 고루틴을 사용하기 위해서는 `go` 키워드를 함수나 메소드 앞에 붙인다.
+하나의 고루틴에서 새 고루틴을 호출하여 실행했을 때, 하나의 고루틴 호출이 완료되면 새 고루틴은 자동으로 종료된다.  
+(새 고루틴이 어떤 작업을 하고, 작업을 완료시키는 것을 기다려주지 않기 때문,  
+공식 설명에서는 백그라운드에서 명령을 수행하는 유닉스 쉘 및 표기법과 유사하다고 한다. )
+
+또한 고루틴에 사용된 함수가 반환값을 갖는 경우, 함수가 완료될 때 삭제된다.  
+(반환값을 갖는 함수를 고루틴에 사용할 때, 함수 리터럴이나 또 다른 함수로 래핑해 사용하기를 권장한다. )
+
+`go list.Sort()`
+
+함수 리터럴은 고루틴 호출에 유용하다.     
+(익명함수를 뜻하는 것 같다. )
+
+```go
+func Announce(message string, delay time.Duration) {
+	go func() {
+		time.Sleep(delay)
+		fmt.Println(message)   
+    } ()
+}
+```
+
+함수 리터럴은 클로저이다.  
+함수가 참조하는 변수를 사용하는 동안에는 그 생존을 보장하는 방식으로 구현되어 있다.  
+다만, 위 샘플은 권장하지 않는 방식이다. 함수가 종료를 알릴 방법이 없기 때문이다.
+
+이를 위해서는 `채널` 이 필요하다.
+
 # 동시성 코드  
 
 Go 언어에서 동시성 코드를 작성하는 방법은 간단하다.  
@@ -205,7 +246,7 @@ CPUs 가 8인 환경이라면 Counter 에 대한 결과가 70, 81, 75, 93 등등
 고 커맨드에서 고 프로그램의 이런 경쟁 상태에 대해서 체크할 수 있는데,  
 `go run -race main.go` 와 같이 고 프로그램을 실행시키면 된다.  
 
-그러면 몇 개의 경쟁 상태가 있는지 알려줄 것이다.
+그러면 몇 개의 경쟁 상태가 있는지 알려줄 것이다.  
 앞서 말한대로, 고루틴의 경쟁 상태는 아토믹, 뮤텍스, 채널 등으로 해결할 수 있다.  
 
 경쟁 상태가 발생하는 이유는 다수의 고루틴이 존재하기 때문이다.  
@@ -307,43 +348,337 @@ func main() {
 }
 ```
 
-# Go routines  
+# Channel
 
-고루틴은 단순한 함수 모델을 갖는다.  
-고루틴은 같은 주소 공간에서 다른 고루틴과 동시에 실행되는 함수이다.  
-
-고루틴은 OS의 멀티 스레드에 멀티플렉싱 된다.  
-입력 및 출력 작업을 위해 대기 중일 때와 같이 하나의 고루틴이 블락되면 다른 고루틴이 계속 실행된다.  
-이런 설계로 인해 여러 복잡한 생성과 관리가 드러나지 않는다.
-
-> 멀티플렉서 (또는 MUX) 는 여러 아날로그 또는 디지털 입력 신호 중 하나를 선택하여  
-> 선택된 입력을 단일 라인에 전달하는 장치이다.   
-> ~ 위키백과 ~  
-
-Go 에서 고루틴을 사용하기 위해서는 `go` 키워드를 함수나 메소드 앞에 붙인다.
-하나의 고루틴에서 새 고루틴을 호출하여 실행했을 때, 하나의 고루틴 호출이 완료되면 새 고루틴은 자동으로 종료된다.  
-(새 고루틴이 어떤 작업을 하고, 작업을 완료시키는 것을 기다려주지 않기 때문,  
-공식 설명에서는 백그라운드에서 명령을 수행하는 유닉스 쉘 및 표기법과 유사하다고 한다. )  
-
-또한 고루틴에 사용된 함수가 반환값을 갖는 경우, 함수가 완료될 때 삭제된다.  
-(반환값을 갖는 함수를 고루틴에 사용할 때, 함수 리터럴이나 또 다른 함수로 래핑해 사용하기를 권장한다. )
-
-`go list.Sort()`
-
-함수 리터럴은 고루틴 호출에 유용하다.     
-(익명함수를 뜻하는 것 같다. ) 
+Go 에서 동시성 코드를 작성하는 보다 나은 고급 방법이다.
 
 ```go
-func Announce(message string, delay time.Duration) {
-	go func() {
-		time.Sleep(delay)
-		fmt.Println(message)   
-    } ()
+package main 
+
+import (
+	"fmt"
+)
+
+func main() {
+	c := make(chan int) // 정수를 넣는 채널  
+	
+	c <- 42 
+	
+	fmt.Println(<-c) 
 }
 ```
 
-함수 리터럴은 클로저이다.  
-함수가 참조하는 변수를 사용하는 동안에는 그 생존을 보장하는 방식으로 구현되어 있다.  
-다만, 위 샘플은 권장하지 않는 방식이다. 함수가 종료를 알릴 방법이 없기 때문이다.
+채널은 데이터를 보낼 수 있는 공간이다.  
+위 코드를 실행하면 모든 고루틴이 슬립 상채라 교착 상태에 빠졌다고 할 것이다.  
+이유는 채널이 막혀있기 때문이다.  
 
-이를 위해서는 `채널` 이 필요하다.  
+채널로 데이터를 송수힌 하는 것은 계주와도 같다.  
+지금은 바통을 들고 뛰다가 손에서 손으로 건네 줘야 하는 상황 같아서 트랜잭션이 발생할 수 없다.  
+트랜잭션이 발생하려면 송수신이 동시에 실행될 수 있어야 한다.  
+동시에 실행될 수 없다면 받는 대상이 데이터를 빼낼 수 있을 때까진 송수신은 차단된다.  
+
+```go
+package main 
+
+import "fmt" 
+
+func main() {
+	
+	c := make(chan int) 
+	
+	go func() {
+		c <- 42
+    }()
+	
+	fmt.Println(<-c)
+}
+```
+
+트랜잭션을 발생시키기 위해 고루틴과 채널을 이용한 동시성 코드를 작성했다.  
+위 샘플에서는 main() 에서 발생한 다른 고루틴에서 채널에 값을 보내고,  
+main() 고루틴에서 채널의 값을 받음으로 하나의 트랜잭션이 완성됐다.  
+
+# Buffer Channel 
+
+버퍼 채널은 채널 안에 값이 머물 수 있게 한다.  
+(값을 수신할 주체가 없더라도)  
+
+```go
+package main 
+
+import "fmt" 
+
+func main() {
+	
+	c := make(chan int, 1) 
+	
+    c <- 42
+	c <- 43 
+	
+	fmt.Println(<-c)
+}
+```
+
+위 샘플에서 c 를 버퍼 채널로 만들었고, 채널 안에는 값이 하나 머물고 있게 된다.  
+채널 안에 값이 하나만 대기하고 있는 것이다.  
+
+이렇게 하면 수신 주체가 없더라도 채널 c 는 42라는 값을 갖을 수 있다.  
+하지만 채널이 43이라는 값을 가지려 할 때는 차단된다.  
+왜냐하면 버퍼 채널이 이미 값을 가지고 있고 그 값을 빼내기 전까진 값을 가질 수 없도록 설계되어 있기 때문이다.  
+(fatal error: all goroutines are sleep - deadlock!)  
+
+```go
+package main 
+
+import "fmt" 
+
+func main() {
+	
+	c := make(chan int, 2) 
+	
+    c <- 42
+    c <- 43 
+	
+	fmt.Println(<-c)
+	fmt.Println(<-c)
+}
+```
+
+문제를 해결하려면 버퍼 공간을 키워주면 된다.  
+크기를 1에서 2로 늘려주면 원하던 대로 값을 두 개 입력할 수 있고,  
+`<-c` 를 두 번 호출하면서 값을 모두 뺄 수 있다.
+
+> [ P O I N T ]  
+> "Don't communicate by sharing memory, share memory by communicating"  
+> 메모리 공유로 데이터를 전달하지 말고, 데이터를 전달함으로써 메모리를 공유해라.  
+
+
+# 방향성이 있는 채널 (Directional Channel)   
+
+위에서 다룬 채널들은 송수신 개념이 있는 양방향 채널인데,  
+채널을 단방향으로 만들 수도 있다.  
+
+## 송신 전용 채널  
+
+```go
+package main 
+
+import "fmt" 
+
+func main() {
+	
+	c := make(chan <- int, 2) // 송신 전용 채널  
+	
+    c <- 42
+    c <- 43 
+	
+	fmt.Println(<-c) // 경고 
+	fmt.Println(<-c) // 경고  
+}
+```
+
+위 샘플은 버퍼 채널을 송신 전용 채널로 만든 것이다.  
+그래서 값을 넣을 수는 있지만 뺄 수는 없는데, 빼려고 하면 값을 빼는 부분에서  
+`Invalid operation: <-c (receive from send-only chan <- int)` 라는 경고문이 뜰 것이다.    
+
+## 수신 전용 채널  
+
+```go
+ch := make(chan int) 
+sender := make(chan <- int) // 송신 전용 채널
+receiver := make(<- chan int) // 수신 전용 채널
+```
+송신 전용 채널 샘플에서 수신 전용 채널을 추가했다.  
+송/수신 전용 채널을 어떻게 선언하는지 위 샘플을 통해 잘 봐둬야 한다.  
+
+## 송/수신 채널의 이용 
+
+다음으로 송신 전용 채널과 수신 전용 채널을 어떻게 사용하는지 샘플을 통해 알아보자.  
+
+```go
+package main 
+
+import "fmt" 
+
+// main
+func main() {
+	c := make(chan int) // 양방향 채널  
+	
+	// send 
+	go sender(c)
+	
+	// receive
+	receiver(c)
+	
+	fmt.Println("----exit----")
+}
+
+// send 
+func sender(c chan<- int) { // 송신 전용 채널 
+    c <- 42 	
+}
+
+// receive
+func receiver(c <-chan int) { // 수신 전용 채널
+	fmt.Println(<-c) 
+}
+``` 
+
+위 샘플에서 왜 sender() 는 go 를 사용했고, receiver() 는 사용하지 않았을까?  
+동시성 로직을 고려해서 작성된 코드이기 때문이다.  
+
+main() 은 다른 고루틴의 작업이 끝날때 까지 기다려주지 않는다.  
+따라서 receiver() 가 값을 수신할 수 있도록 고루틴으로 만들지 않고,  
+값을 온전히 수신할 때 까지 sender() 의 작업이 끝나기를 기다린다.  
+
+그러면 아래와 같은 출력 결과를 얻을 수 있다.  
+
+```text
+42
+----exit----
+```
+
+## Range Pattern  
+
+```go
+package main 
+
+import "fmt" 
+
+// main
+func main() {
+	c := make(chan int) // 양방향 채널  
+	
+	// send 
+	go sender(c)
+	
+	// receive
+	receiver(c)
+	
+	fmt.Println("----exit----")
+}
+
+// send 
+func sender(c chan<- int) { // 송신 전용 채널 
+	for i:=1; i<100; i++ {
+		c <- i
+    }
+	close(c) // 메인 채널을 닫는다. 채널은 새로운 메모리 공간에 생성되는데, 그걸 닫는다. 
+}
+
+// receive
+func receiver(c <-chan int) { // 수신 전용 채널
+	for v := range c {
+		fmt.Println(v) 
+    } 
+}
+``` 
+
+close(c) 를 해서 메인 채널을 닫아주지 않으면 프로그램은 교착상태에 빠진다.  
+receiver() 가 채널을 통해 계속해서 값을 받길 원하고 있기 때문이다.  
+따라서 모든 값이 송신이 완료되면 꼭 close(c) 해준다.  
+
+## Select Pattern   
+
+```go
+package main 
+
+import (
+	"fmt" 
+)
+
+func main() {
+	eve := make(chan int) 
+	odd := make(chan int) 
+	quit := make(chan int) 
+	
+	// send
+	go send(eve, odd, quit)  
+	
+	// recv
+	recv(eve, odd, quit)
+	
+	fmt.Println("----exit----")
+}
+
+func recv(e, o, q <-chan int) {
+	for {
+		select {
+                    case v := <-e :
+                        fmt.Println("from the even channel: ", v)
+                    case v := <-o :
+                        fmt.Println("from the odd channel: ", v)
+                    case v := <- q :
+                        fmt.Println("from the quit chaanel: ", v)
+                        return
+		}
+    }
+}
+
+func send(e, o, q chan<- int) {
+	for i := 1; i<100; i++ {
+		if i % 2 == 0 {
+			e <- i
+		} else {
+			o <- i 
+        }
+    }
+	close(q)
+}
+```
+
+위 샘플은 여러 채널을 이용해서 짝수, 홀수, Quit 에 따른 송/수신을 알아보는 코드이다.   
+
+## Comma Ok Pattern  
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	eve := make(chan int)
+	odd := make(chan int)
+	//quit := make(chan int)
+	quit := make(chan bool) 
+	
+	// send
+	go send(eve, odd, quit)
+
+	// recv
+	recv(eve, odd, quit)
+
+	fmt.Println("----exit----")
+}
+
+func send(even, odd chan<- int, quit chan<- bool) {
+	for i := 1; i<100; i++ {
+		if i % 2 == 0 {
+			even <- i
+		} else {
+			odd <- i
+		}
+	}
+	close(quit)
+}
+
+func recv(even, odd <-chan int, quit <-chan bool) {
+	for {
+		select {
+		    case v := <-even :
+				fmt.Println("from the even channel: ", v)
+            case v := <-odd : 
+				fmt.Println("from  the oven channel: ", v) 
+            case i, ok := <- quit : // quit 채널은 닫혔을 때 값을 전달한다.  
+				if !ok {
+					fmt.Println("not ok ", i, ok)
+					return 
+                } else {
+					fmt.Println("ok", i)
+                }
+        }
+    }
+}
+```
