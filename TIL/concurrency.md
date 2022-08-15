@@ -538,7 +538,7 @@ main() 은 다른 고루틴의 작업이 끝날때 까지 기다려주지 않는
 ----exit----
 ```
 
-## Range Pattern  
+# Range Pattern  
 
 ```go
 package main 
@@ -578,7 +578,7 @@ close(c) 를 해서 메인 채널을 닫아주지 않으면 프로그램은 교�
 receiver() 가 채널을 통해 계속해서 값을 받길 원하고 있기 때문이다.  
 따라서 모든 값이 송신이 완료되면 꼭 close(c) 해준다.  
 
-## Select Pattern   
+# Select Pattern   
 
 ```go
 package main 
@@ -629,7 +629,7 @@ func send(e, o, q chan<- int) {
 
 위 샘플은 여러 채널을 이용해서 짝수, 홀수, Quit 에 따른 송/수신을 알아보는 코드이다.   
 
-## Comma Ok Pattern  
+# Comma Ok Pattern  
 
 ```go
 package main
@@ -682,3 +682,336 @@ func recv(even, odd <-chan int, quit <-chan bool) {
     }
 }
 ```
+
+# 팬인(Fan in)  
+
+팬인이란 여러 채널에서 값을 빼서 하나의 채널에 넣는 것이다.  
+
+```go
+package main 
+
+import (
+	"fmt"
+	"sync" 
+) 
+
+func main() {
+	even := make(chan int) 
+	odd := make(chan int) 
+	fanin := make(chan int) 
+	
+	go send(even, odd) 
+	
+	go receive(even, odd, fanin) 
+	
+	for v := range fanin {
+		fmt.Println(v) 
+    }
+	
+	fmt.Println("----exit----")
+}
+
+func send(even, odd chan<- int) {
+	for i:=1; i<100; i++ {
+		if i % 2 == 0 {
+			even <- i
+        } else {
+			odd <- i 
+        }
+    }
+	close(even) 
+	close(odd) 
+}
+
+func receive(even, odd <-chan int, fanin chan<- int) {
+	var wg sync.WaitGroup
+	wg.Add(2) 
+	
+	go func() {
+		for v := range even {
+			fanin <- v
+        }
+		wg.Done() 
+    }()
+	
+	go func() {
+		for v := range odd {
+			fanin <- v
+        }
+		wg.Done() 
+    }()
+	
+	wg.Wait() 
+	close(fanin) 
+}
+```
+
+# 팬아웃 (Fan Out) 
+
+큰 작업(Big Task)을 여러 고루틴을 이용해 병렬로 나누어 처리하는 방식을 팬아웃이라 한다.  
+
+```go
+package main 
+
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time" 
+)
+
+func main() {
+	c1 := make(chan int) 
+	c2 := make(chan int) 
+	
+	go populate(c1) 
+	
+	go fanOutIn(c1,c2) 
+	
+	for v:= range c2 {
+		fmt.Println(v) 
+    }
+	
+	fmt.Println("----exit----") 
+}
+
+func populate(c chan int) {
+	for i := 1; i < 100; i++ {
+		c <- i
+    }
+	close(c) 
+}
+
+func fanOutIn(c1, c2 chan int)  {
+	var wg sync.WaitGroup  
+	for v := range c1 {
+		wg.Add(1)  
+		go func (v2 int){
+			c2 <- timeConsumingWork(v2) // 무작위 값을 c2에 넣고,  
+			wg.Done() // 웨잇그룹 작업을 완료했음을 알린다. 
+        }(v) 
+    }
+	wg.Wait() // 다른 고루틴이 완료될 때까지 기다려준다. 
+	close(c2) // c1 작업이 완료되서 닫히면 얘도 닫히게 해준다. 
+}
+
+func timeConsumingWork(v2 int) int {
+	time.Sleep(time.Microsecond * time.Duration(rand.Intn(500))) // 잠시 뜸을 들이고,
+	return n + rand.Intn(1000) // 0~1000 사이의 무작위 값을 반환한다.  
+}
+```
+
+## 스로틀링 팬아웃(throttle throughput)
+
+```go
+package main 
+
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time" 
+)
+
+func main() {
+	c1 := make(chan int) 
+	c2 := make(chan int) 
+	
+	go populate(c1) 
+	
+	go fanOutIn(c1,c2) 
+	
+	for v:= range c2 {
+		fmt.Println(v) 
+    }
+	
+	fmt.Println("----exit----") 
+}
+
+func populate(c chan int) {
+	for i := 1; i < 100; i++ {
+		c <- i
+    }
+	close(c) 
+}
+
+func fanOutIn(c1, c2 chan int)  {
+	var wg sync.WaitGroup  
+	const gs = 10 // goroutines 
+	
+	wg.Add(gs)
+	for i:=0; i<gs; i++ {
+		go func() { 
+			for v := range c1 {
+				func (v2 int) {
+					c2 <- timeConsumingWork(v2) 
+                }(v)
+				wg.Done() 
+            }
+        }()
+    }
+	wg.Wait() 
+	close(c2)
+}
+
+func timeConsumingWork(v2 int) int {
+	time.Sleep(time.Microsecond * time.Duration(rand.Intn(500))) // 잠시 뜸을 들이고,
+	return n + rand.Intn(1000) // 0~1000 사이의 무작위 값을 반환한다.  
+}
+```
+
+# Context
+
+어떤 프로세스가 있고 프로세스 일부에서 여러 고루틴을 실행시키고 이 프로세스를 종료했는데  
+고루틴이 그대로 실행되고 있다면 엄청난 낭비일 것이다.  
+
+고루틴을 여러 개 실행 시키는 프로세스가 있는 상황에서 해당 프로세스를 종료 시키면  
+관련된 고루틴도 모두 종료되야 한다.  
+
+콘텍스트는 바로 이런 상황에서 쓰인다. 또한 콘텍스트는 요청과 관련된 변수를 전달해줄 때도 쓰인다.
+
+아래는 참고 학습자료다.  
+* https://go.dev/blog/context  
+* https://godoc.org/context  
+
+`콘텍스트(Context)` 는 구조체다.  
+콘텍스트를 반환하는 백그라운드(`Background()`) 외에 여러 함수들이 존재한다.  
+
+* 데드라인  
+    `WithDeadline(Context, time.Time) (Context, CancelFunc)`
+  * 해당 작업이 멈추는 시점을 명시 
+* 타임아웃  
+    `WithTimeout(Context, time.Duration) (Context, CancelFunc)`
+  * 일정 시간이 지난 후에 작업이 멈춤 
+* 캔슬
+  `WithCancel(Context) (Context, CancelFunc)`
+  * 관련된 모든 작업을 취소 
+* 밸류
+  `WithValue(Context, key, val interface{}) Context`
+  * 콘텍스트네 값을 전달하거나 추
+
+다음은 콘텍스트의 명세를 알아보자.  
+
+```go
+type Context interface {
+	Deadline() (deadline time.Time, ok bool) 
+	Done() <-chan struct{}
+	// Done() 은 프로그램 신호를 보낸다. 
+	// 주로 select 문에서 사용된다.
+	// WithCancel 은 Done() 이 종료되게 한다. WithDeadline 도 마찬가지 
+	Err() error
+	// Done() 이 종료된 후에 nil 이 아닌 Err 를 반환한다.
+	Value(key interface{}) interface{} 
+}
+```
+
+## Background
+
+백그라운드로 컨텍스트를 생성하는 샘플을 보자.  
+
+```go
+package main 
+
+import (
+	"context"
+	"fmt" 
+)
+
+func main() {
+	ctx := context.Background()
+	
+	fmt.Println("context: \t", ctx)     // context.Background
+	fmt.Println("context err: \t", ctx.Err())       // <nil>
+	fmt.Printf("context type: %T\n", ctx)       // *context.emptyCtx 
+	fmt.Println("----")
+}
+```
+
+## WithCancel
+
+WithCancel 을 활용해 컨텍스트를 취소하는 과정을 확인하자.   
+
+```go
+package main 
+
+import (
+	"context"
+	"fmt" 
+)
+
+func main() {
+	ctx := context.Background()
+	
+	fmt.Println("context: \t", ctx)     // context.Background
+	fmt.Println("context err: \t", ctx.Err())       // <nil>
+	fmt.Printf("context type: \t%T\n", ctx)       // *context.emptyCtx 
+	fmt.Println("----")
+	
+	ctx, cancel := context.WithCancel(ctx)
+
+	fmt.Println("context: \t", ctx)     // context.Background.WithCancel
+	fmt.Println("context err: \t", ctx.Err())       // <nil>
+	fmt.Printf("context type: %T\n", ctx)       // *context.cancelCtx
+	fmt.Println("cancel: \t", cancel)       // 0xd7acv
+	fmt.Printf("cancel type: \t%T\n", cancel)       // context.CancelFunc
+	fmt.Println("----")
+	
+	cancel()
+
+	fmt.Println("context: \t", ctx)     // context.Background.WithCancel
+	fmt.Println("context err: \t", ctx.Err())       // context.canceled
+	fmt.Printf("context type: %T\n", ctx)       // *context.cancelCtx
+	fmt.Println("cancel: \t", cancel)       // 0xd7acv
+	fmt.Printf("cancel type: \t%T\n", cancel)       // context.CancelFunc
+	fmt.Println("----")
+}
+```
+
+이제 컨텍스트에 대한 활용 샘플을 확인한다.  
+
+```go
+package main 
+
+import (
+	"context"
+	"fmt"
+	"runtime"
+    "time" 
+)
+
+func main( ){
+	ctx, cancel := context.WithCancel(context.Background())
+	
+	fmt.Println("err check 1: ", ctx.Err())
+	fmt.Println("num gorutines 1: ", runtime.NumGoroutine())
+	
+	go func() {
+		n := 0 
+		for {
+			select {
+			case <- ctx.Done(): // Done() 은 채널을 반환하는 채널이다. 
+				return 
+            default: 
+				n++
+				time.Sleep(time.Millisecond * 200) // 0.2초간  
+				fmt.Println("working", n) // n은 10번 출력된다. (2 X 5) 
+            }
+        }
+    }()
+	
+	time.Sleep(time.Second * 2) // 여기서 2초간 고루틴 작업을 기다린다. 
+	fmt.Println("error check 2: ", ctx.Err())
+	fmt.Println("num goroutines 2:", runtime.NumGoroutine())
+	
+	fmt.Println("----exit----")
+	cancel()
+	fmt.Println("canceled context")
+	
+	time.Sleep(time.Second * 2) 
+	fmt.Println("error check 3: ", ctx.Err())
+	fmt.Println("num goroutines 3: ", runtime.NumGoroutine())
+}
+```
+
+Context 는 이해하기 어려운 고급 주제이다.  
+따라서 매뉴얼을 꼼꼼히 읽으며 공부해봐야 할 것 같다.
